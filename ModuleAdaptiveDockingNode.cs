@@ -17,11 +17,10 @@ namespace AdaptiveDockingNode
 		[KSPField(isPersistant = false)]
 		public string ValidSizes;
 
-		[KSPField(isPersistant = true)]
-		public string nodeType;
-
 		protected ModuleDockingNode dockingModule;
 		protected AttachNode referenceAttachNode;
+
+		protected bool hasAttachedState;
 
 		protected System.Diagnostics.Stopwatch timeoutTimer;
 
@@ -93,12 +92,21 @@ namespace AdaptiveDockingNode
 			protected set;
 		}
 
-
-		public override void OnLoad(ConfigNode node)
+		public override void OnStart(StartState state)
 		{
-			base.OnLoad(node);
+			base.OnStart(state);
 
-			if (this.ValidSizes != string.Empty)
+			/*switch (state)
+			{
+				case StartState.Editor:
+				case StartState.None:
+					Tools.PostDebugMessage(this, "Refusing to start when not in flight.");
+					return;
+				default:
+					break;
+			}*/
+
+			if (string.IsNullOrEmpty(this.ValidSizes))
 			{
 				this.validSizes = this.ValidSizes.Split(',').Select(s => s.Trim()).ToList();
 				this.validSizes.Sort();
@@ -113,15 +121,18 @@ namespace AdaptiveDockingNode
 					string.Format("defaultSize: {0}", this.defaultSize)
 				);
 			}
-		}
 
-		public override void OnAwake()
-		{
-			base.OnAwake();
+			if (this.validSizes == null || this.validSizes.Count == 0)
+			{
+				Tools.PostDebugMessage(this,
+					"Refusing to start because our module was configured poorly.",
+					string.Format("validSizes: {0}", this.validSizes)
+				);
+				return;
+			}
 
-			this.validSizes = null;
+			this.timeoutTimer = new System.Diagnostics.Stopwatch();
 
-			Tools.PostDebugMessage(this, "Awake!");
 
 			bool foundFirstNode = false;
 			foreach (PartModule module in this.part.Modules)
@@ -139,50 +150,7 @@ namespace AdaptiveDockingNode
 				}
 			}
 
-			if (this.attachedPart != null && this.attachedPart.isDockingNode())
-			{
-				ModuleAdaptiveDockingNode attachedAdaptiveNode =
-					this.part.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
-
-				if (attachedAdaptiveNode != null)
-				{
-					string commonNodeSize = GetGreatestCommonNodeType(this, attachedAdaptiveNode);
-
-					if (!string.IsNullOrEmpty(commonNodeSize))
-					{
-						this.nodeType = commonNodeSize;
-						attachedAdaptiveNode.currentSize = commonNodeSize;
-					}
-				}
-			}
-
-			this.currentSize = this.nodeType;
-		}
-
-		public override void OnStart(StartState state)
-		{
-			base.OnStart(state);
-
-			switch (state)
-			{
-				case StartState.Editor:
-				case StartState.None:
-					Tools.PostDebugMessage(this, "Refusing to start when not in flight.");
-					return;
-				default:
-					break;
-			}
-
-			if (this.validSizes == null || this.validSizes.Count == 0)
-			{
-				Tools.PostDebugMessage(this,
-					"Refusing to start because our module was configured poorly.",
-					string.Format("validSizes: {0}", this.validSizes)
-				);
-				return;
-			}
-
-			this.timeoutTimer = new System.Diagnostics.Stopwatch();
+			this.dockingModule.Fields["nodeType"].isPersistant = true;
 
 			if (this.dockingModule == null)
 			{
@@ -192,9 +160,17 @@ namespace AdaptiveDockingNode
 
 			if (!string.IsNullOrEmpty(this.dockingModule.referenceAttachNode))
 			{
+				Tools.PostDebugMessage(this,
+					string.Format("referenceAttachNode string: {0}", this.dockingModule.referenceAttachNode));
+
 				this.referenceAttachNode = this.part.attachNodes
 					.FirstOrDefault(n => n.id == this.dockingModule.referenceAttachNode);
+
+				Tools.PostDebugMessage(this,
+					string.Format("referenceAttachNode: {0}", this.referenceAttachNode));
 			}
+
+			this.hasAttachedState = !this.hasAttachedPart;
 
 			this.part.activate(this.part.inverseStage, this.part.vessel);
 
@@ -206,8 +182,6 @@ namespace AdaptiveDockingNode
 		public override void OnFixedUpdate()
 		{
 			base.OnFixedUpdate();
-
-			this.nodeType = this.currentSize;
 
 			Tools.PostDebugMessage(this, "OnFixedUpdate");
 
@@ -348,6 +322,46 @@ namespace AdaptiveDockingNode
 				}
 
 				this.timeoutTimer.Start();
+			}
+		}
+
+		public void LateUpdate()
+		{
+			if (HighLogic.LoadedSceneIsEditor)
+			{
+				Tools.PostDebugMessage(this, "LateUpdate", string.Format("attachedPart: {0}", this.attachedPart));
+
+				if (this.attachedPart != null)
+				{
+					ModuleDockingNode attachedNode = this.attachedPart.getFirstModuleOfType<ModuleDockingNode>();
+
+					Tools.PostDebugMessage(this, string.Format("attachedNode: {0}", attachedNode));
+
+					if (attachedNode != null)
+					{
+						ModuleAdaptiveDockingNode attachedADN = this.attachedPart
+							.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
+
+						if (attachedADN != null && attachedADN.currentSize != this.currentSize)
+						{
+							this.currentSize = GetGreatestCommonNodeType(this, attachedADN);
+
+							Tools.PostDebugMessage(this,
+								string.Format("Attached to AdaptiveDockingNode, setting currentSize = {0}",
+									this.currentSize)
+							);
+						}
+						else if (attachedNode.nodeType != this.currentSize)
+						{
+							this.currentSize = attachedNode.nodeType;
+
+							Tools.PostDebugMessage(this,
+								string.Format("Attached to ModuleDockingNode, setting currentSize = {0}",
+									this.currentSize)
+							);
+						}
+					}
+				}
 			}
 		}
 
