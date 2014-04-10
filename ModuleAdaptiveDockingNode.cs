@@ -1,7 +1,11 @@
 ﻿// AdaptiveDockingNode © 2014 toadicus
 //
-// This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a
-// copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
+// This software is licensed under the Creative Commons Attribution 4.0 International License.
+// To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/.
+//
+// This software uses the ModuleManager library, © 2013-2014 Ialdabaoth (who is awesome), sarbian, et al
+// Used under a Creative Commons Attribution-ShareAlike 3.0 Unported License.
+// 
 
 using KSP;
 using System;
