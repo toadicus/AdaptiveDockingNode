@@ -216,110 +216,101 @@ namespace AdaptiveDockingNode
 
 				Tools.PostDebugMessage(this, string.Format("Checking nearby vessel {0}", vessel.vesselName));
 
-				foreach (Part part in vessel.Parts)
+				foreach (ModuleDockingNode potentialTargetNode in vessel.getModulesOfType<ModuleDockingNode>())
 				{
-					foreach (PartModule module in part.Modules)
-					{
-						if (module is ModuleDockingNode)
-						{
-							ModuleDockingNode potentialTargetNode = module as ModuleDockingNode;
+					Tools.PostDebugMessage(this,
+						string.Format("Found potentialTargetNode: {0}", potentialTargetNode),
+						string.Format("potentialTargetNode.state: {0}", potentialTargetNode.state),
+						string.Format("potentialTargetNode.nodeType: {0}", potentialTargetNode.nodeType)
+					);
 
-							Tools.PostDebugMessage(this,
-								string.Format("Found potentialTargetNode: {0}", potentialTargetNode),
-								string.Format("potentialTargetNode.state: {0}", potentialTargetNode.state),
-								string.Format("potentialTargetNode.nodeType: {0}", potentialTargetNode.nodeType)
+					if (potentialTargetNode.part == this.part)
+					{
+						Tools.PostDebugMessage(this, "Discarding potentialTargetNode: on this part.");
+						continue;
+					}
+
+					if (
+						potentialTargetNode.state.Contains(string.Intern("Docked")) ||
+						potentialTargetNode.state.Contains(string.Intern("PreAttached"))
+					)
+					{
+						Tools.PostDebugMessage(this, "Discarding potentialTargetNode: not ready.");
+						continue;
+					}
+
+					float thisNodeDistSqr = (potentialTargetNode.nodeTransform.position - this.dockingModule.nodeTransform.position).sqrMagnitude;
+
+					if (thisNodeDistSqr <= Mathf.Min(this.acquireRangeSqr * 4f, closestNodeDistSqr))
+					{
+						Tools.PostDebugMessage(this, "potentialTargetNode is nearby, checking if adaptive.");
+
+						ModuleAdaptiveDockingNode targetAdaptiveNode = null;
+
+						string targetSize;
+						targetSize = string.Empty;
+
+						if (this.validSizes.Contains(potentialTargetNode.nodeType))
+						{
+							targetSize = potentialTargetNode.nodeType;
+							this.currentSize = targetSize;
+						}
+						else
+						{
+							// Check the part for an AdaptiveDockingNode
+							targetAdaptiveNode = potentialTargetNode.part.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
+						}
+
+						if (targetAdaptiveNode == null)
+						{
+							Tools.PostDebugMessage(this, "potentialTargetNode is not adaptive.",
+								string.Format("nodeType: {0}", potentialTargetNode.nodeType)
+							);
+						}
+						else
+						{
+							Tools.PostDebugMessage(this, "potentialTargetNode is adaptive.",
+								string.Format("defaultSize: {0}", targetAdaptiveNode.defaultSize),
+								string.Format("validSizes: {0}", targetAdaptiveNode.validSizes)
 							);
 
-							if (
-								potentialTargetNode.state.Contains(string.Intern("Docked")) ||
-								potentialTargetNode.state.Contains(string.Intern("PreAttached"))
-							)
+							if (this.validSizes.Contains(targetAdaptiveNode.defaultSize))
 							{
-								Tools.PostDebugMessage(this, "Discarding potentialTargetNode: not ready.");
-								continue;
+								targetSize = targetAdaptiveNode.defaultSize;
 							}
-
-							float thisNodeDistSqr = (potentialTargetNode.nodeTransform.position - this.dockingModule.nodeTransform.position).sqrMagnitude;
-
-							if (thisNodeDistSqr <= Mathf.Min(this.acquireRangeSqr * 4f, closestNodeDistSqr))
+							else
 							{
-								Tools.PostDebugMessage(this, "potentialTargetNode is nearby, checking if adaptive.");
+								string commonNodeType = GetGreatestCommonNodeType(this, targetAdaptiveNode);
 
-								ModuleAdaptiveDockingNode targetAdaptiveNode = null;
-
-								string targetSize;
-								targetSize = string.Empty;
-
-								if (this.validSizes.Contains(potentialTargetNode.nodeType))
+								if (commonNodeType == string.Empty)
 								{
-									targetSize = potentialTargetNode.nodeType;
-									this.currentSize = targetSize;
-								}
-								else
-								{
-									// Check the part for an AdaptiveDockingNode
-									foreach (PartModule module2 in part.Modules)
-									{
-										if (module2 is ModuleAdaptiveDockingNode)
-										{
-											targetAdaptiveNode = module2 as ModuleAdaptiveDockingNode;
-											break;
-										}
-									}
-								}
-
-								if (targetAdaptiveNode == null)
-								{
-									Tools.PostDebugMessage(this, "potentialTargetNode is not adaptive.",
-										string.Format("nodeType: {0}", potentialTargetNode.nodeType)
-									);
-								}
-								else
-								{
-									Tools.PostDebugMessage(this, "potentialTargetNode is adaptive.",
-										string.Format("defaultSize: {0}", targetAdaptiveNode.defaultSize),
-										string.Format("validSizes: {0}", targetAdaptiveNode.validSizes)
-									);
-
-									if (this.validSizes.Contains(targetAdaptiveNode.defaultSize))
-									{
-										targetSize = targetAdaptiveNode.defaultSize;
-									}
-									else
-									{
-										string commonNodeType = GetGreatestCommonNodeType(this, targetAdaptiveNode);
-
-										if (commonNodeType == string.Empty)
-										{
-											Tools.PostDebugMessage(this,
-												"Invalid adaptive target: no common node types.");
-											continue;
-										}
-
-										targetAdaptiveNode.currentSize = commonNodeType;
-										this.currentSize = commonNodeType;
-
-										Tools.PostDebugMessage(this,
-											string.Format("Local and target nodeTypes set to commonNodeType: {0}",
-												commonNodeType)
-										);
-									}
-								}
-
-								if (targetSize == string.Empty)
-								{
+									Tools.PostDebugMessage(this,
+										"Invalid adaptive target: no common node types.");
 									continue;
 								}
 
-								Tools.PostDebugMessage(this, "Found suitable docking node.",
-									string.Format("targetSize: {0}", targetSize)
-								);
+								targetAdaptiveNode.currentSize = commonNodeType;
+								this.currentSize = commonNodeType;
 
-								closestNodeDistSqr = thisNodeDistSqr;
-								this.currentSize = targetSize;
-								foundTargetNode = true;
+								Tools.PostDebugMessage(this,
+									string.Format("Local and target nodeTypes set to commonNodeType: {0}",
+										commonNodeType)
+								);
 							}
 						}
+
+						if (targetSize == string.Empty)
+						{
+							continue;
+						}
+
+						Tools.PostDebugMessage(this, "Found suitable docking node.",
+							string.Format("targetSize: {0}", targetSize)
+						);
+
+						closestNodeDistSqr = thisNodeDistSqr;
+						this.currentSize = targetSize;
+						foundTargetNode = true;
 					}
 				}
 			}
@@ -354,7 +345,7 @@ namespace AdaptiveDockingNode
 						if (attachedNode != null)
 						{
 							ModuleAdaptiveDockingNode attachedADN = this.attachedPart
-							.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
+								.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
 
 							if (attachedADN != null && attachedADN.currentSize != this.currentSize)
 							{
