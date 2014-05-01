@@ -52,11 +52,17 @@
     <Compile Include="..\ToadicusTools\PartExtensions.cs">
       <Link>ToadicusTools\PartExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\ToadicusTools\ModuleDB.cs">
-      <Link>ToadicusTools\ModuleDB.cs</Link>
-    </Compile>
     <Compile Include="..\ToadicusTools\VesselExtensions.cs">
       <Link>ToadicusTools\VesselExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\ModuleDBWrapper.cs">
+      <Link>ToadicusTools\ModuleDBWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\PrefabDBWrapper.cs">
+      <Link>ToadicusTools\PrefabDBWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\IModuleDB.cs">
+      <Link>ToadicusTools\IModuleDB.cs</Link>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
