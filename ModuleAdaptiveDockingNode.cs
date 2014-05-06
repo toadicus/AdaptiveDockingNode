@@ -197,161 +197,159 @@ namespace AdaptiveDockingNode
 
 			this.hasAttachedState = !this.hasAttachedPart;
 
-			this.part.activate(this.part.inverseStage, this.part.vessel);
-
 			Tools.PostDebugMessage(this, "Started!",
 				string.Format("dockingModule: {0}", this.dockingModule)
 			);
 		}
 
-		public override void OnFixedUpdate()
+		public void FixedUpdate()
 		{
-			base.OnFixedUpdate();
-
-			Tools.DebugLogger verboseLog = Tools.DebugLogger.New(this);
-
-			verboseLog.AppendFormat("\nChecking within acquire range: {0}", this.acquireRangeSqr);
-
-			if (this.timeoutTimer.IsRunning && this.timeoutTimer.ElapsedMilliseconds > 5000)
+			if (HighLogic.LoadedSceneIsFlight && this.dockingModule != null)
 			{
-				verboseLog.AppendFormat("\nNo target detected within 5 seconds, timing out.");
-				verboseLog.AppendFormat("\nReverting to default nodeType: {0}", this.defaultSize);
+				Tools.DebugLogger verboseLog = Tools.DebugLogger.New(this);
 
-				this.dockingModule.nodeType = this.defaultSize;
-				this.timeoutTimer.Reset();
-			}
+				verboseLog.AppendFormat("\nChecking within acquire range: {0}", this.acquireRangeSqr);
 
-			bool foundTargetNode = false;
-			float closestNodeDistSqr = float.PositiveInfinity;
-
-			foreach (Vessel vessel in FlightGlobals.Vessels)
-			{
-				// Skip vessels that are just way too far away.
-				if (this.vessel.sqrDistanceTo(vessel) > this.acquireRangeSqr * 100f)
+				if (this.timeoutTimer.IsRunning && this.timeoutTimer.ElapsedMilliseconds > 5000)
 				{
-					verboseLog.AppendFormat("\nSkipping distant vessel {0} (sqrDistance {1})",
-						vessel.vesselName, (vessel.GetWorldPos3D() - this.dockingModule.transform.position).sqrMagnitude);
-					continue;
-				}
+					verboseLog.AppendFormat("\nNo target detected within 5 seconds, timing out.");
+					verboseLog.AppendFormat("\nReverting to default nodeType: {0}", this.defaultSize);
 
-				verboseLog.AppendFormat("\nChecking nearby vessel {0} (sqrDistance {1})",
-						vessel.vesselName, (vessel.GetWorldPos3D() - this.dockingModule.transform.position).sqrMagnitude);
-
-				foreach (ModuleDockingNode potentialTargetNode in vessel.getModulesOfType<ModuleDockingNode>())
-				{
-					verboseLog.AppendFormat("\nFound potentialTargetNode: {0}", potentialTargetNode);
-					verboseLog.AppendFormat("\npotentialTargetNode.state: {0}", potentialTargetNode.state);
-					verboseLog.AppendFormat("\npotentialTargetNode.nodeType: {0}", potentialTargetNode.nodeType);
-
-					if (potentialTargetNode.part == this.part)
-					{
-						verboseLog.AppendFormat("\nDiscarding potentialTargetNode: on this part.");
-						continue;
-					}
-
-					if (
-						potentialTargetNode.state.Contains(string.Intern("Docked")) ||
-						potentialTargetNode.state.Contains(string.Intern("PreAttached"))
-					)
-					{
-						verboseLog.Append("\nDiscarding potentialTargetNode: not ready.");
-						continue;
-					}
-
-					float thisNodeDistSqr = (potentialTargetNode.nodeTransform.position - this.dockingModule.nodeTransform.position).sqrMagnitude;
-
-					if (thisNodeDistSqr <= Mathf.Min(this.acquireRangeSqr * 4f, closestNodeDistSqr))
-					{
-						verboseLog.AppendFormat("\npotentialTargetNode is nearby, checking if adaptive.");
-
-						ModuleAdaptiveDockingNode targetAdaptiveNode = null;
-
-						string targetSize;
-						targetSize = string.Empty;
-
-						if (this.validSizes.Contains(potentialTargetNode.nodeType))
-						{
-							targetSize = potentialTargetNode.nodeType;
-							this.currentSize = targetSize;
-						}
-						else
-						{
-							// Check the part for an AdaptiveDockingNode
-							targetAdaptiveNode = potentialTargetNode.part.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
-						}
-
-						if (targetAdaptiveNode == null)
-						{
-							verboseLog.AppendFormat("\npotentialTargetNode is not adaptive.");
-							verboseLog.AppendFormat("\nnodeType: {0}", potentialTargetNode.nodeType);
-						}
-						else
-						{
-							verboseLog.AppendFormat("\npotentialTargetNode is adaptive.");
-							verboseLog.AppendFormat("\ndefaultSize: {0}", targetAdaptiveNode.defaultSize);
-							verboseLog.AppendFormat("\nvalidSizes: {0}", targetAdaptiveNode.validSizes);
-
-							if (this.validSizes.Contains(targetAdaptiveNode.defaultSize))
-							{
-								targetSize = targetAdaptiveNode.defaultSize;
-							}
-							else
-							{
-								string commonNodeType = GetGreatestCommonNodeType(this, targetAdaptiveNode);
-
-								if (commonNodeType == string.Empty)
-								{
-									verboseLog.AppendFormat("\nInvalid adaptive target: no common node types.");
-									continue;
-								}
-
-								targetAdaptiveNode.currentSize = commonNodeType;
-								this.currentSize = commonNodeType;
-
-								verboseLog.AppendFormat("\nLocal and target nodeTypes set to commonNodeType: {0}");
-							}
-						}
-
-						if (targetSize == string.Empty)
-						{
-							continue;
-						}
-
-						verboseLog.AppendFormat("\nFound suitable docking node.");
-						verboseLog.AppendFormat("\ntargetSize: {0}", targetSize);
-
-						verboseLog.AppendFormat("\nForward vector dot product: {0} (acquire minimum: {1})",
-							Vector3.Dot(potentialTargetNode.transform.forward, this.dockingModule.transform.forward),
-							this.dockingModule.acquireMinFwdDot
-						);
-
-						verboseLog.AppendFormat("\nUp vector dot product: {0} (acquire minimum: {1})",
-							Vector3.Dot(potentialTargetNode.transform.up, this.dockingModule.transform.up),
-							this.dockingModule.acquireMinRollDot
-						);
-
-						closestNodeDistSqr = thisNodeDistSqr;
-						this.currentSize = targetSize;
-						foundTargetNode = true;
-					}
-				}
-
-				verboseLog.Append('\n');
-			}
-
-
-			verboseLog.Append("LateUpdate Finished.");
-
-			verboseLog.Print();
-
-			if (foundTargetNode)
-			{
-				if (this.timeoutTimer.IsRunning)
-				{
+					this.dockingModule.nodeType = this.defaultSize;
 					this.timeoutTimer.Reset();
 				}
 
-				this.timeoutTimer.Start();
+				bool foundTargetNode = false;
+				float closestNodeDistSqr = float.PositiveInfinity;
+
+				foreach (Vessel vessel in FlightGlobals.Vessels)
+				{
+					// Skip vessels that are just way too far away.
+					if (this.vessel.sqrDistanceTo(vessel) > this.acquireRangeSqr * 100f)
+					{
+						verboseLog.AppendFormat("\nSkipping distant vessel {0} (sqrDistance {1})",
+							vessel.vesselName, (vessel.GetWorldPos3D() - this.dockingModule.transform.position).sqrMagnitude);
+						continue;
+					}
+
+					verboseLog.AppendFormat("\nChecking nearby vessel {0} (sqrDistance {1})",
+						vessel.vesselName, (vessel.GetWorldPos3D() - this.dockingModule.transform.position).sqrMagnitude);
+
+					foreach (ModuleDockingNode potentialTargetNode in vessel.getModulesOfType<ModuleDockingNode>())
+					{
+						verboseLog.AppendFormat("\nFound potentialTargetNode: {0}", potentialTargetNode);
+						verboseLog.AppendFormat("\npotentialTargetNode.state: {0}", potentialTargetNode.state);
+						verboseLog.AppendFormat("\npotentialTargetNode.nodeType: {0}", potentialTargetNode.nodeType);
+
+						if (potentialTargetNode.part == this.part)
+						{
+							verboseLog.AppendFormat("\nDiscarding potentialTargetNode: on this part.");
+							continue;
+						}
+
+						if (
+							potentialTargetNode.state.Contains(string.Intern("Docked")) ||
+							potentialTargetNode.state.Contains(string.Intern("PreAttached")))
+						{
+							verboseLog.Append("\nDiscarding potentialTargetNode: not ready.");
+							continue;
+						}
+
+						float thisNodeDistSqr = (potentialTargetNode.nodeTransform.position - this.dockingModule.nodeTransform.position).sqrMagnitude;
+
+						if (thisNodeDistSqr <= Mathf.Min(this.acquireRangeSqr * 4f, closestNodeDistSqr))
+						{
+							verboseLog.AppendFormat("\npotentialTargetNode is nearby, checking if adaptive.");
+
+							ModuleAdaptiveDockingNode targetAdaptiveNode = null;
+
+							string targetSize;
+							targetSize = string.Empty;
+
+							if (this.validSizes.Contains(potentialTargetNode.nodeType))
+							{
+								targetSize = potentialTargetNode.nodeType;
+								this.currentSize = targetSize;
+							}
+							else
+							{
+								// Check the part for an AdaptiveDockingNode
+								targetAdaptiveNode = potentialTargetNode.part.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
+							}
+
+							if (targetAdaptiveNode == null)
+							{
+								verboseLog.AppendFormat("\npotentialTargetNode is not adaptive.");
+								verboseLog.AppendFormat("\nnodeType: {0}", potentialTargetNode.nodeType);
+							}
+							else
+							{
+								verboseLog.AppendFormat("\npotentialTargetNode is adaptive.");
+								verboseLog.AppendFormat("\ndefaultSize: {0}", targetAdaptiveNode.defaultSize);
+								verboseLog.AppendFormat("\nvalidSizes: {0}", targetAdaptiveNode.validSizes);
+
+								if (this.validSizes.Contains(targetAdaptiveNode.defaultSize))
+								{
+									targetSize = targetAdaptiveNode.defaultSize;
+								}
+								else
+								{
+									string commonNodeType = GetGreatestCommonNodeType(this, targetAdaptiveNode);
+
+									if (commonNodeType == string.Empty)
+									{
+										verboseLog.AppendFormat("\nInvalid adaptive target: no common node types.");
+										continue;
+									}
+
+									targetAdaptiveNode.currentSize = commonNodeType;
+									this.currentSize = commonNodeType;
+
+									verboseLog.AppendFormat("\nLocal and target nodeTypes set to commonNodeType: {0}");
+								}
+							}
+
+							if (targetSize == string.Empty)
+							{
+								continue;
+							}
+
+							verboseLog.AppendFormat("\nFound suitable docking node.");
+							verboseLog.AppendFormat("\ntargetSize: {0}", targetSize);
+
+							verboseLog.AppendFormat("\nForward vector dot product: {0} (acquire minimum: {1})",
+								Vector3.Dot(potentialTargetNode.transform.forward, this.dockingModule.transform.forward),
+								this.dockingModule.acquireMinFwdDot
+							);
+
+							verboseLog.AppendFormat("\nUp vector dot product: {0} (acquire minimum: {1})",
+								Vector3.Dot(potentialTargetNode.transform.up, this.dockingModule.transform.up),
+								this.dockingModule.acquireMinRollDot
+							);
+
+							closestNodeDistSqr = thisNodeDistSqr;
+							this.currentSize = targetSize;
+							foundTargetNode = true;
+						}
+					}
+
+					verboseLog.Append('\n');
+				}
+
+
+				verboseLog.Append("FixedUpdate Finished.");
+
+				verboseLog.Print();
+
+				if (foundTargetNode)
+				{
+					if (this.timeoutTimer.IsRunning)
+					{
+						this.timeoutTimer.Reset();
+					}
+
+					this.timeoutTimer.Start();
+				}
 			}
 		}
 
