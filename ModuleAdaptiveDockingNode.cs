@@ -202,7 +202,12 @@ namespace AdaptiveDockingNode
 
 		public void FixedUpdate()
 		{
-			if (HighLogic.LoadedSceneIsFlight && FlightGlobals.Vessels != null && this.dockingModule != null)
+			if (
+				HighLogic.LoadedSceneIsFlight &&
+				FlightGlobals.Vessels != null &&
+				FlightGlobals.ActiveVessel == this.vessel &&
+				this.dockingModule != null
+			)
 			{
 				bool foundApproach = false;
 
@@ -235,12 +240,16 @@ namespace AdaptiveDockingNode
 					if (this.vessel.sqrDistanceTo(vessel) > this.vesselFilterDistanceSqr)
 					{
 						verboseLog.AppendFormat("\nSkipping distant vessel {0} (sqrDistance {1})",
-							vessel.vesselName, (vessel.GetWorldPos3D() - this.dockingModule.transform.position).sqrMagnitude);
+							vessel.vesselName,
+							(vessel.GetWorldPos3D() - this.dockingModule.nodeTransform.position).sqrMagnitude
+						);
 						continue;
 					}
 
 					verboseLog.AppendFormat("\nChecking nearby vessel {0} (sqrDistance {1})",
-						vessel.vesselName, (vessel.GetWorldPos3D() - this.dockingModule.transform.position).sqrMagnitude);
+						vessel.vesselName,
+						(vessel.GetWorldPos3D() - this.dockingModule.nodeTransform.position).sqrMagnitude
+					);
 
 					foreach (ModuleDockingNode potentialTargetNode in vessel.getModulesOfType<ModuleDockingNode>())
 					{
@@ -262,7 +271,9 @@ namespace AdaptiveDockingNode
 							continue;
 						}
 
-						float thisNodeDistSqr = (potentialTargetNode.nodeTransform.position - this.dockingModule.nodeTransform.position).sqrMagnitude;
+						float thisNodeDistSqr = 
+							(potentialTargetNode.nodeTransform.position - this.dockingModule.nodeTransform.position)
+								.sqrMagnitude;
 
 						verboseLog.AppendFormat(
 							"\n\tChecking potentialTargetNode sqrDistance against the lesser of acquireRangeSqr and " +
@@ -290,7 +301,8 @@ namespace AdaptiveDockingNode
 							else
 							{
 								// Check the part for an AdaptiveDockingNode
-								targetAdaptiveNode = potentialTargetNode.part.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
+								targetAdaptiveNode = potentialTargetNode.part
+									.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
 							}
 
 							if (targetAdaptiveNode == null)
@@ -321,7 +333,8 @@ namespace AdaptiveDockingNode
 									targetAdaptiveNode.currentSize = commonNodeType;
 									this.currentSize = commonNodeType;
 
-									verboseLog.AppendFormat("\n\tLocal and target nodeTypes set to commonNodeType: {0}");
+									verboseLog.AppendFormat(
+										"\n\tLocal and target nodeTypes set to commonNodeType: {0}");
 								}
 							}
 
@@ -334,12 +347,13 @@ namespace AdaptiveDockingNode
 							verboseLog.AppendFormat("\n\ttargetSize: {0}", targetSize);
 						
 							verboseLog.AppendFormat("\n\tForward vector dot product: {0} (acquire minimum: {1})",
-								Vector3.Dot(potentialTargetNode.transform.forward, this.dockingModule.transform.forward),
+								Vector3.Dot(potentialTargetNode.nodeTransform.forward,
+									this.dockingModule.nodeTransform.forward),
 								this.dockingModule.acquireMinFwdDot
 							);
 
 							verboseLog.AppendFormat("\n\tUp vector dot product: {0} (acquire minimum: {1})",
-								Vector3.Dot(potentialTargetNode.transform.up, this.dockingModule.transform.up),
+								Vector3.Dot(potentialTargetNode.nodeTransform.up, this.dockingModule.nodeTransform.up),
 								this.dockingModule.acquireMinRollDot
 							);
 
