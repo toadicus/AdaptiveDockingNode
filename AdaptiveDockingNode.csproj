@@ -11,6 +11,7 @@
     <AssemblyName>AdaptiveDockingNode</AssemblyName>
     <CodePage>65001</CodePage>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <UseMSBuildEngine>False</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_win|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
