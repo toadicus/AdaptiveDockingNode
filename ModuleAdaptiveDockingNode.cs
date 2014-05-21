@@ -205,7 +205,7 @@ namespace AdaptiveDockingNode
 			if (
 				HighLogic.LoadedSceneIsFlight &&
 				FlightGlobals.Vessels != null &&
-				FlightGlobals.ActiveVessel == this.vessel &&
+				this.vessel != null &&
 				this.dockingModule != null
 			)
 			{
