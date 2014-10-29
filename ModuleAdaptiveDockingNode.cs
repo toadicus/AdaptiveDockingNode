@@ -37,8 +37,13 @@ namespace AdaptiveDockingNode
 		[KSPField(isPersistant = false)]
 		public string ValidSizes;
 
+		[KSPField(isPersistant = false)]
+		public string Gender;
+
 		protected ModuleDockingNode dockingModule;
 		protected AttachNode referenceAttachNode;
+
+		protected PortGender portGender;
 
 		protected double vesselFilterDistanceSqr;
 
@@ -48,15 +53,8 @@ namespace AdaptiveDockingNode
 
 		protected float acquireRangeSqr
 		{
-			get
-			{
-				if (this.dockingModule == null)
-				{
-					return float.NaN;
-				}
-
-				return this.dockingModule.acquireRange * this.dockingModule.acquireRange;
-			}
+			get;
+			set;
 		}
 
 		protected Part attachedPart
@@ -114,6 +112,13 @@ namespace AdaptiveDockingNode
 			protected set;
 		}
 
+		public override void OnAwake()
+		{
+			base.OnAwake();
+
+			this.portGender = PortGender.NEUTRAL;
+		}
+
 		public override void OnStart(StartState state)
 		{
 			base.OnStart(state);
@@ -154,6 +159,27 @@ namespace AdaptiveDockingNode
 				return;
 			}
 
+			if (this.Gender != null)
+			{
+				string trimmedGender = this.Gender.Trim().ToLower();
+
+				if (trimmedGender == "female")
+				{
+					this.portGender = PortGender.FEMALE;
+				}
+				else if (trimmedGender == "male")
+				{
+					this.portGender = PortGender.MALE;
+				}
+
+				if (this.portGender == PortGender.FEMALE || this.portGender == PortGender.MALE)
+				{
+					this.defaultSize = String.Concat(this.defaultSize, trimmedGender);
+				}
+			}
+
+			Tools.PostDebugMessage(this, "Port gender is {0}", Enum.GetName(typeof(PortGender), this.portGender));
+
 			this.timeoutTimer = new System.Diagnostics.Stopwatch();
 
 			this.dockingModule = this.part.getFirstModuleOfType<ModuleDockingNode>();
@@ -183,6 +209,8 @@ namespace AdaptiveDockingNode
 					string.Format("referenceAttachNode: {0}", this.referenceAttachNode));
 			}
 
+			this.acquireRangeSqr = this.dockingModule.acquireRange * this.dockingModule.acquireRange;
+
 			var config = KSP.IO.PluginConfiguration.CreateForType<ModuleAdaptiveDockingNode>();
 			config.load();
 
@@ -209,7 +237,9 @@ namespace AdaptiveDockingNode
 				this.dockingModule != null
 			)
 			{
+				#if DEBUG
 				bool foundApproach = false;
+				#endif
 
 				Tools.DebugLogger verboseLog = Tools.DebugLogger.New(this);
 
@@ -217,6 +247,22 @@ namespace AdaptiveDockingNode
 					this.part.partInfo.name, this.part.uid, this.vessel.vesselName);
 				verboseLog.AppendFormat("\nChecking within acquireRangeSqr: {0}", this.acquireRangeSqr);
 
+				// If we're already docked or pre-attached...
+				if (this.dockingModule.state == "Docked" || this.dockingModule.state == "PreAttached")
+				{
+					// ...and if the timeout timer is running...
+					if (this.timeoutTimer.IsRunning)
+					{
+						// ...reset the timeout timer
+						this.timeoutTimer.Reset();
+					}
+
+					// ...skip this check
+					return;
+				}
+
+				// If the timeout timer is running, we found a match recently.  If we haven't found a match in more than
+				// five seconds, it's not recent anymore, so reset our size to default.
 				if (this.timeoutTimer.IsRunning && this.timeoutTimer.ElapsedMilliseconds > 5000)
 				{
 					verboseLog.AppendFormat("\nNo target detected within 5 seconds, timing out.");
@@ -229,6 +275,7 @@ namespace AdaptiveDockingNode
 				bool foundTargetNode = false;
 				float closestNodeDistSqr = this.acquireRangeSqr * 4f;
 
+				// Check all vessels for potential docking targets
 				foreach (Vessel vessel in FlightGlobals.Vessels)
 				{
 					#if DEBUG
@@ -251,18 +298,22 @@ namespace AdaptiveDockingNode
 						(vessel.GetWorldPos3D() - this.dockingModule.nodeTransform.position).sqrMagnitude
 					);
 
+					// Since this vessel is not too far away, check all docking nodes on the vessel.
 					foreach (ModuleDockingNode potentialTargetNode in vessel.getModulesOfType<ModuleDockingNode>())
 					{
 						verboseLog.AppendFormat("\nFound potentialTargetNode: {0}", potentialTargetNode);
 						verboseLog.AppendFormat("\n\tpotentialTargetNode.state: {0}", potentialTargetNode.state);
 						verboseLog.AppendFormat("\n\tpotentialTargetNode.nodeType: {0}", potentialTargetNode.nodeType);
 
+						// We can't skip the current vessel, because it's possible to dock parts on a single vessel to
+						// each other.  Still, we can't dock a port to itself, so skip this part.
 						if (potentialTargetNode.part == this.part)
 						{
 							verboseLog.AppendFormat("\nDiscarding potentialTargetNode: on this part.");
 							continue;
 						}
 
+						// If this docking node is already docked, we can't dock to it, so skip it.
 						if (
 							potentialTargetNode.state.Contains(string.Intern("Docked")) ||
 							potentialTargetNode.state.Contains(string.Intern("PreAttached")))
@@ -281,9 +332,13 @@ namespace AdaptiveDockingNode
 							Mathf.Min(this.acquireRangeSqr * 4f, closestNodeDistSqr)
 						);
 
+						// Only bother checking nodes closer than twice our acquire range.  We have to check before we
+						// get within acquire range to make sure Squad's code will catch us when we get there.
 						if (thisNodeDistSqr <= Mathf.Min(this.acquireRangeSqr * 4f, closestNodeDistSqr))
 						{
+							#if DEBUG
 							foundApproach = true;
+							#endif
 
 							verboseLog.AppendFormat(
 								"\n\tpotentialTargetNode is nearby ({0}), checking if adaptive.", thisNodeDistSqr);
@@ -293,11 +348,16 @@ namespace AdaptiveDockingNode
 							string targetSize;
 							targetSize = string.Empty;
 
-							if (this.validSizes.Contains(potentialTargetNode.nodeType))
+							// Only adapt to non-adaptive docking nodes if this node is gender neutral.
+							if (
+								this.validSizes.Contains(potentialTargetNode.nodeType) &&
+								this.portGender == PortGender.NEUTRAL
+							)
 							{
 								targetSize = potentialTargetNode.nodeType;
 								this.currentSize = targetSize;
 							}
+							// Otherwise, look for another adaptive node.
 							else
 							{
 								// Check the part for an AdaptiveDockingNode
@@ -305,44 +365,88 @@ namespace AdaptiveDockingNode
 									.getFirstModuleOfType<ModuleAdaptiveDockingNode>();
 							}
 
-							if (targetAdaptiveNode == null)
+							// If we've found an AdaptiveDockingNode...
+							if (targetAdaptiveNode != null)
 							{
-								verboseLog.AppendFormat("\n\tpotentialTargetNode is not adaptive.");
-								verboseLog.AppendFormat("\n\tnodeType: {0}", potentialTargetNode.nodeType);
-							}
-							else
-							{
+								// ...and if the genders don't match, skip this target.
+								switch (this.portGender)
+								{
+									case PortGender.NEUTRAL:
+										if (targetAdaptiveNode.portGender != PortGender.NEUTRAL)
+											continue;
+										break;
+									case PortGender.FEMALE:
+										if (targetAdaptiveNode.portGender != PortGender.MALE)
+											continue;
+										break;
+									case PortGender.MALE:
+										if (targetAdaptiveNode.portGender != PortGender.FEMALE)
+											continue;
+										break;
+								}
+
 								verboseLog.AppendFormat("\n\tpotentialTargetNode is adaptive.");
 								verboseLog.AppendFormat("\n\tdefaultSize: {0}", targetAdaptiveNode.defaultSize);
 								verboseLog.AppendFormat("\n\tvalidSizes: {0}", targetAdaptiveNode.validSizes);
 
+								// ...and if we can become its largest (default) size...
+								// This will never be true for gendered ports, because they will have _{gender} appended
+								// to their default size.
 								if (this.validSizes.Contains(targetAdaptiveNode.defaultSize))
 								{
+									// ...target its default size.
 									targetSize = targetAdaptiveNode.defaultSize;
 								}
+								// ...otherwise, look for a common size.
 								else
 								{
 									string commonNodeType = GetGreatestCommonNodeType(this, targetAdaptiveNode);
 
+									// ...if we didn't find a common size, stop processing this node
 									if (commonNodeType == string.Empty)
 									{
 										verboseLog.AppendFormat("\n\tInvalid adaptive target: no common node types.");
 										continue;
 									}
 
-									targetAdaptiveNode.currentSize = commonNodeType;
-									this.currentSize = commonNodeType;
+
+									// ...otherwise, target the common size, obfuscating for gendered ports just in case
+									if (this.portGender == PortGender.FEMALE || this.portGender == PortGender.MALE)
+									{
+										targetSize = String.Concat(commonNodeType, "_gendered");
+									}
+									else
+									{
+										targetSize = commonNodeType;
+									}
+
+									targetAdaptiveNode.currentSize = targetSize;
 
 									verboseLog.AppendFormat(
-										"\n\tLocal and target nodeTypes set to commonNodeType: {0}");
+										"\n\tTarget nodeType set to commonNodeType: {0}", targetSize);
 								}
 							}
+							#if DEBUG
+							else
+							{
+								verboseLog.AppendFormat("\n\tpotentialTargetNode is not adaptive.");
+								verboseLog.AppendFormat("\n\tnodeType: {0}", potentialTargetNode.nodeType);
+							}
+							#endif
 
+							// If we never found a target size, it's not a match, so stop processing.
 							if (targetSize == string.Empty)
 							{
 								continue;
 							}
 
+							// ...otherwise, log this node as the closest and adapt to the target size.
+							closestNodeDistSqr = thisNodeDistSqr;
+							this.currentSize = targetSize;
+							foundTargetNode = true;
+
+
+							verboseLog.AppendFormat("\n\tLocal nodeType set to commonNodeType: {0}", targetSize);
 							verboseLog.AppendFormat("\n\tFound suitable docking node.");
 							verboseLog.AppendFormat("\n\ttargetSize: {0}", targetSize);
 						
@@ -356,10 +460,6 @@ namespace AdaptiveDockingNode
 								Vector3.Dot(potentialTargetNode.nodeTransform.up, this.dockingModule.nodeTransform.up),
 								this.dockingModule.acquireMinRollDot
 							);
-
-							closestNodeDistSqr = thisNodeDistSqr;
-							this.currentSize = targetSize;
-							foundTargetNode = true;
 						}
 						else
 						{
@@ -375,8 +475,10 @@ namespace AdaptiveDockingNode
 
 				verboseLog.Append("\nFixedUpdate Finished.");
 
+				#if DEBUG
 				if (foundApproach)
 					verboseLog.Print();
+				#endif
 
 				if (foundTargetNode)
 				{
@@ -473,5 +575,12 @@ namespace AdaptiveDockingNode
 
 			return string.Empty;
 		}
+	}
+
+	internal enum PortGender
+	{
+		NEUTRAL,
+		MALE,
+		FEMALE
 	}
 }
