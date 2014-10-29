@@ -140,13 +140,6 @@ namespace AdaptiveDockingNode
 				this.validSizes.Reverse();
 
 				this.defaultSize = this.validSizes[0];
-
-				Tools.PostDebugMessage(this, "Loaded!" +
-					"\n\tvalidSizes: {0}" +
-					"\n\tdefaultSize: {1}",
-					string.Join(", ", this.validSizes.Select(s => (string)s).ToArray()),
-					this.defaultSize
-				);
 			}
 
 			if (this.validSizes == null || this.validSizes.Count == 0)
@@ -177,6 +170,13 @@ namespace AdaptiveDockingNode
 					this.defaultSize = String.Concat(this.defaultSize, trimmedGender);
 				}
 			}
+
+			Tools.PostDebugMessage(this, "Loaded!" +
+				"\n\tvalidSizes: {0}" +
+				"\n\tdefaultSize: {1}",
+				string.Join(", ", this.validSizes.Select(s => (string)s).ToArray()),
+				this.defaultSize
+			);
 
 			Tools.PostDebugMessage(this, "Port gender is {0}", Enum.GetName(typeof(PortGender), this.portGender));
 
@@ -577,7 +577,7 @@ namespace AdaptiveDockingNode
 		}
 	}
 
-	internal enum PortGender
+	public enum PortGender
 	{
 		NEUTRAL,
 		MALE,
