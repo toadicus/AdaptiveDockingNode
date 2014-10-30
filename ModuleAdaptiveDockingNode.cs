@@ -51,6 +51,8 @@ namespace AdaptiveDockingNode
 
 		protected System.Diagnostics.Stopwatch timeoutTimer;
 
+		protected string GuidString;
+
 		protected float acquireRangeSqr
 		{
 			get;
@@ -167,7 +169,16 @@ namespace AdaptiveDockingNode
 
 				if (this.portGender == PortGender.FEMALE || this.portGender == PortGender.MALE)
 				{
-					this.defaultSize = String.Concat(this.defaultSize, trimmedGender);
+					byte[] partUID = BitConverter.GetBytes(this.part.flightID);
+					byte[] vesselUID = this.vessel.id.ToByteArray();
+					byte[] guidBytes = new byte[partUID.Length + vesselUID.Length];
+
+					partUID.CopyTo(guidBytes, 0);
+					vesselUID.CopyTo(guidBytes, partUID.Length);
+
+					this.GuidString = Convert.ToBase64String(guidBytes).TrimEnd('=');
+
+					this.defaultSize = String.Format("{0}_{1}_{2}", this.defaultSize, trimmedGender, this.GuidString);
 				}
 			}
 
@@ -191,6 +202,17 @@ namespace AdaptiveDockingNode
 			}
 
 			this.dockingModule.Fields["nodeType"].isPersistant = true;
+
+			// If we're not in the editor, not docked, and not preattached, set the current size to the default size.
+			// This stops gendered ports from matching non-adaptive ports.
+			if (
+				!HighLogic.LoadedSceneIsEditor &&
+				this.dockingModule.state != "Docked" &&
+				this.dockingModule.state != "PreAttached"
+			)
+			{
+				this.currentSize = this.defaultSize;
+			}
 
 			#if DEBUG
 			this.dockingModule.Fields["nodeType"].guiActive = true;
