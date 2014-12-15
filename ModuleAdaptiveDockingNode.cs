@@ -288,9 +288,13 @@ namespace AdaptiveDockingNode
 				if (this.timeoutTimer.IsRunning && this.timeoutTimer.ElapsedMilliseconds > 5000)
 				{
 					verboseLog.AppendFormat("\nNo target detected within 5 seconds, timing out.");
-					verboseLog.AppendFormat("\nReverting to default nodeType: {0}", this.defaultSize);
 
-					this.dockingModule.nodeType = this.defaultSize;
+					if (this.dockingModule.state != "Docked")
+					{
+						verboseLog.AppendFormat("\nReverting to default nodeType: {0}", this.defaultSize);
+						this.currentSize = this.defaultSize;
+					}
+
 					this.timeoutTimer.Reset();
 				}
 
