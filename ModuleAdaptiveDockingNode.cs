@@ -266,7 +266,7 @@ namespace AdaptiveDockingNode
 				Tools.DebugLogger verboseLog = Tools.DebugLogger.New(this);
 
 				verboseLog.AppendFormat(" ({0}_{1}) on {2}",
-					this.part.partInfo.name, this.part.uid, this.vessel.vesselName);
+					this.part.partInfo.name, this.part.craftID, this.vessel.vesselName);
 				verboseLog.AppendFormat("\nChecking within acquireRangeSqr: {0}", this.acquireRangeSqr);
 
 				// If we're already docked or pre-attached...
