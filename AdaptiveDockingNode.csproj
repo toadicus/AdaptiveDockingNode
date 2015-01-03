@@ -24,8 +24,8 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /Y ${ProjectDir}\${ProjectName}.cfg C:\Users\andy\Games\KSP_win\GameData\AdaptiveDockingNode\" />
-        <Command type="AfterBuild" command="xcopy /Y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AdaptiveDockingNode\Plugins\" />
+        <Command type="AfterBuild" command="xcopy /Y ${ProjectDir}\${ProjectName}.cfg ${ProjectDir}\GameData\AdaptiveDockingNode\" />
+        <Command type="AfterBuild" command="xcopy /Y ${TargetFile} ${ProjectDir}\GameData\AdaptiveDockingNode\Plugins\" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -37,8 +37,8 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /Y ${ProjectDir}\${ProjectName}.cfg C:\Users\andy\Games\KSP_win\GameData\AdaptiveDockingNode\" />
-        <Command type="AfterBuild" command="xcopy /Y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AdaptiveDockingNode\Plugins\" />
+        <Command type="AfterBuild" command="xcopy /Y ${ProjectDir}\${ProjectName}.cfg ${ProjectDir}\GameData\AdaptiveDockingNode\" />
+        <Command type="AfterBuild" command="xcopy /Y ${TargetFile} ${ProjectDir}\GameData\AdaptiveDockingNode\Plugins\" />
       </CustomCommands>
     </CustomCommands>
     <DefineConstants>MODULE_DB_AVAILABLE</DefineConstants>
