@@ -24,7 +24,6 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /Y ${ProjectDir}\${ProjectName}.cfg ${ProjectDir}\GameData\AdaptiveDockingNode\" />
         <Command type="AfterBuild" command="xcopy /Y ${TargetFile} ${ProjectDir}\GameData\AdaptiveDockingNode\Plugins\" />
       </CustomCommands>
     </CustomCommands>
@@ -37,7 +36,6 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /Y ${ProjectDir}\${ProjectName}.cfg ${ProjectDir}\GameData\AdaptiveDockingNode\" />
         <Command type="AfterBuild" command="xcopy /Y ${TargetFile} ${ProjectDir}\GameData\AdaptiveDockingNode\Plugins\" />
       </CustomCommands>
     </CustomCommands>
@@ -54,7 +52,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg ${ProjectDir}/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -67,7 +65,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg ${ProjectDir}/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
