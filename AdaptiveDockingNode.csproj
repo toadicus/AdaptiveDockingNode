@@ -86,9 +86,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="AdaptiveDockingNode.cfg" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="ToadicusTools\" />
   </ItemGroup>
   <ItemGroup>
@@ -101,5 +98,8 @@
     <Reference Include="UnityEngine">
       <HintPath>..\_KSPAssemblies\UnityEngine.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GameData\AdaptiveDockingNode\AdaptiveDockingNode.cfg" />
   </ItemGroup>
 </Project>
