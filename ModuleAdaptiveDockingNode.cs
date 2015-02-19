@@ -167,18 +167,23 @@ namespace AdaptiveDockingNode
 					this.portGender = PortGender.MALE;
 				}
 
-				if (this.portGender == PortGender.FEMALE || this.portGender == PortGender.MALE)
+				switch (this.portGender)
 				{
-					byte[] partUID = BitConverter.GetBytes(this.part.flightID);
-					byte[] vesselUID = this.vessel.id.ToByteArray();
-					byte[] guidBytes = new byte[partUID.Length + vesselUID.Length];
+					case PortGender.FEMALE:
+					case PortGender.MALE:
+						byte[] partUID = BitConverter.GetBytes(this.part.flightID);
+						byte[] vesselUID = this.vessel.id.ToByteArray();
+						byte[] guidBytes = new byte[partUID.Length + vesselUID.Length];
 
-					partUID.CopyTo(guidBytes, 0);
-					vesselUID.CopyTo(guidBytes, partUID.Length);
+						partUID.CopyTo(guidBytes, 0);
+						vesselUID.CopyTo(guidBytes, partUID.Length);
 
-					this.GuidString = Convert.ToBase64String(guidBytes).TrimEnd('=');
+						this.GuidString = Convert.ToBase64String(guidBytes).TrimEnd('=');
 
-					this.defaultSize = String.Format("{0}_{1}_{2}", this.defaultSize, trimmedGender, this.GuidString);
+						this.defaultSize = String.Format("{0}_{1}_{2}", this.defaultSize, trimmedGender, this.GuidString);
+						break;
+					default:
+						break;
 				}
 			}
 
@@ -265,6 +270,11 @@ namespace AdaptiveDockingNode
 
 				Tools.DebugLogger verboseLog = Tools.DebugLogger.New(this);
 
+				#if DEBUG
+				try
+				{
+				#endif
+
 				verboseLog.AppendFormat(" ({0}_{1}) on {2}",
 					this.part.partInfo.name, this.part.craftID, this.vessel.vesselName);
 				verboseLog.AppendFormat("\nChecking within acquireRangeSqr: {0}", this.acquireRangeSqr);
@@ -341,8 +351,8 @@ namespace AdaptiveDockingNode
 
 						// If this docking node is already docked, we can't dock to it, so skip it.
 						if (
-							potentialTargetNode.state.Contains(string.Intern("Docked")) ||
-							potentialTargetNode.state.Contains(string.Intern("PreAttached")))
+							potentialTargetNode.state.Contains("Docked") ||
+							potentialTargetNode.state.Contains("PreAttached"))
 						{
 							verboseLog.Append("\nDiscarding potentialTargetNode: not ready.");
 							continue;
@@ -435,15 +445,16 @@ namespace AdaptiveDockingNode
 										continue;
 									}
 
-
 									// ...otherwise, target the common size, obfuscating for gendered ports just in case
-									if (this.portGender == PortGender.FEMALE || this.portGender == PortGender.MALE)
+									switch (this.portGender)
 									{
-										targetSize = String.Concat(commonNodeType, "_gendered");
-									}
-									else
-									{
-										targetSize = commonNodeType;
+										case PortGender.FEMALE:
+										case PortGender.MALE:
+											targetSize = String.Concat(commonNodeType, "_gendered");
+											break;
+										default:
+											targetSize = commonNodeType;
+											break;
 									}
 
 									targetAdaptiveNode.currentSize = targetSize;
@@ -501,11 +512,6 @@ namespace AdaptiveDockingNode
 
 				verboseLog.Append("\nFixedUpdate Finished.");
 
-				#if DEBUG
-				if (foundApproach)
-					verboseLog.Print();
-				#endif
-
 				if (foundTargetNode)
 				{
 					if (this.timeoutTimer.IsRunning)
@@ -515,6 +521,15 @@ namespace AdaptiveDockingNode
 
 					this.timeoutTimer.Start();
 				}
+
+				#if DEBUG
+				}
+				finally
+				{
+					if (foundApproach)
+					verboseLog.Print();
+				}
+				#endif
 			}
 		}
 
