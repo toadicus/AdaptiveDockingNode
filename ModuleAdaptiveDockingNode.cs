@@ -167,23 +167,26 @@ namespace AdaptiveDockingNode
 					this.portGender = PortGender.MALE;
 				}
 
-				switch (this.portGender)
+				if (HighLogic.LoadedSceneIsFlight)
 				{
-					case PortGender.FEMALE:
-					case PortGender.MALE:
-						byte[] partUID = BitConverter.GetBytes(this.part.flightID);
-						byte[] vesselUID = this.vessel.id.ToByteArray();
-						byte[] guidBytes = new byte[partUID.Length + vesselUID.Length];
+					switch (this.portGender)
+					{
+						case PortGender.FEMALE:
+						case PortGender.MALE:
+							byte[] partUID = BitConverter.GetBytes(this.part.flightID);
+							byte[] vesselUID = this.vessel.id.ToByteArray();
+							byte[] guidBytes = new byte[partUID.Length + vesselUID.Length];
 
-						partUID.CopyTo(guidBytes, 0);
-						vesselUID.CopyTo(guidBytes, partUID.Length);
+							partUID.CopyTo(guidBytes, 0);
+							vesselUID.CopyTo(guidBytes, partUID.Length);
 
-						this.GuidString = Convert.ToBase64String(guidBytes).TrimEnd('=');
+							this.GuidString = Convert.ToBase64String(guidBytes).TrimEnd('=');
 
-						this.defaultSize = String.Format("{0}_{1}_{2}", this.defaultSize, trimmedGender, this.GuidString);
-						break;
-					default:
-						break;
+							this.defaultSize = String.Format("{0}_{1}_{2}", this.defaultSize, trimmedGender, this.GuidString);
+							break;
+						default:
+							break;
+					}
 				}
 			}
 
@@ -278,6 +281,13 @@ namespace AdaptiveDockingNode
 				verboseLog.AppendFormat(" ({0}_{1}) on {2}",
 					this.part.partInfo.name, this.part.craftID, this.vessel.vesselName);
 				verboseLog.AppendFormat("\nChecking within acquireRangeSqr: {0}", this.acquireRangeSqr);
+				
+				verboseLog.AppendFormat("this.dockingModule: {0}\n", this.dockingModule == null ?
+						"null" : this.dockingModule.ToString());
+				
+				verboseLog.AppendFormat("this.dockingModule.state: {0}\n",
+					this.dockingModule == null || this.dockingModule.state == null ?
+					"null" :this.dockingModule.state.ToString());
 
 				// If we're already docked or pre-attached...
 				if (this.dockingModule.state == "Docked" || this.dockingModule.state == "PreAttached")
@@ -311,14 +321,17 @@ namespace AdaptiveDockingNode
 				bool foundTargetNode = false;
 				float closestNodeDistSqr = this.acquireRangeSqr * 4f;
 
+				verboseLog.Append("Starting Vessels loop.");
+
 				// Check all vessels for potential docking targets
 				foreach (Vessel vessel in FlightGlobals.Vessels)
 				{
-					#if DEBUG
-					if (vessel == this.vessel)
+					if (vessel == null)
+					{
+						verboseLog.Append("Skipping null vessel.");
 						continue;
-					#endif
-
+					}
+					
 					// Skip vessels that are just way too far away.
 					if (this.vessel.sqrDistanceTo(vessel) > this.vesselFilterDistanceSqr)
 					{
@@ -526,7 +539,7 @@ namespace AdaptiveDockingNode
 				}
 				finally
 				{
-					if (foundApproach)
+					// if (foundApproach)
 					verboseLog.Print();
 				}
 				#endif
