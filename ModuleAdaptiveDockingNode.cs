@@ -324,8 +324,10 @@ namespace AdaptiveDockingNode
 				verboseLog.Append("Starting Vessels loop.");
 
 				// Check all vessels for potential docking targets
-				foreach (Vessel vessel in FlightGlobals.Vessels)
+				Vessel vessel;
+				for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
 				{
+					vessel = FlightGlobals.Vessels[vIdx];
 					if (vessel == null)
 					{
 						verboseLog.Append("Skipping null vessel.");
@@ -348,8 +350,11 @@ namespace AdaptiveDockingNode
 					);
 
 					// Since this vessel is not too far away, check all docking nodes on the vessel.
-					foreach (ModuleDockingNode potentialTargetNode in vessel.getModulesOfType<ModuleDockingNode>())
+					IList<ModuleDockingNode> potentialNodes = vessel.getModulesOfType<ModuleDockingNode>();
+					ModuleDockingNode potentialTargetNode;
+					for (int nIdx = 0; nIdx < potentialNodes.Count; nIdx++)
 					{
+						potentialTargetNode = potentialNodes[nIdx];
 						verboseLog.AppendFormat("\nFound potentialTargetNode: {0}", potentialTargetNode);
 						verboseLog.AppendFormat("\n\tpotentialTargetNode.state: {0}", potentialTargetNode.state);
 						verboseLog.AppendFormat("\n\tpotentialTargetNode.nodeType: {0}", potentialTargetNode.nodeType);
