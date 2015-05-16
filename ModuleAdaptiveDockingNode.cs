@@ -26,7 +26,6 @@
 using KSP;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ToadicusTools;
 using UnityEngine;
 
@@ -137,7 +136,15 @@ namespace AdaptiveDockingNode
 
 			if (this.ValidSizes != string.Empty)
 			{
-				this.validSizes = this.ValidSizes.Split(',').Select(s => s.Trim()).ToList();
+				this.validSizes = new List<string>();
+
+				string[] splitSizes = this.ValidSizes.Split(',');
+
+				for (int idx = 0; idx < splitSizes.Length; idx++)
+				{
+					this.validSizes.Add(splitSizes[idx].Trim());
+				}
+
 				this.validSizes.Sort();
 				this.validSizes.Reverse();
 
@@ -191,9 +198,7 @@ namespace AdaptiveDockingNode
 			}
 
 			Tools.PostDebugMessage(this, "Loaded!" +
-				"\n\tvalidSizes: {0}" +
-				"\n\tdefaultSize: {1}",
-				string.Join(", ", this.validSizes.Select(s => (string)s).ToArray()),
+				"\n\tdefaultSize: {0}",
 				this.defaultSize
 			);
 
@@ -232,8 +237,17 @@ namespace AdaptiveDockingNode
 				Tools.PostDebugMessage(this,
 					string.Format("referenceAttachNode string: {0}", this.dockingModule.referenceAttachNode));
 
-				this.referenceAttachNode = this.part.attachNodes
-					.FirstOrDefault(n => n.id == this.dockingModule.referenceAttachNode);
+				AttachNode node;
+				for (int nIdx = 0; nIdx < this.part.attachNodes.Count; nIdx++)
+				{
+					node = this.part.attachNodes[nIdx];
+
+					if (node.id == this.dockingModule.referenceAttachNode)
+					{
+						this.referenceAttachNode = node;
+						break;
+					}
+				}
 
 				Tools.PostDebugMessage(this,
 					string.Format("referenceAttachNode: {0}", this.referenceAttachNode));
