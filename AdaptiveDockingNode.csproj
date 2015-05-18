@@ -81,6 +81,9 @@
     <Compile Include="..\ToadicusTools\VesselExtensions.cs">
       <Link>ToadicusTools\VesselExtensions.cs</Link>
     </Compile>
+    <Compile Include="..\ToadicusTools\VectorTools.cs">
+      <Link>ToadicusTools\VectorTools.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
