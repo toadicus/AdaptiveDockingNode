@@ -369,6 +369,28 @@ namespace AdaptiveDockingNode
 					for (int nIdx = 0; nIdx < potentialNodes.Count; nIdx++)
 					{
 						potentialTargetNode = potentialNodes[nIdx];
+
+						if (potentialTargetNode == null)
+						{
+							verboseLog.AppendFormat("\nSkipping potentialTargetNode at index {0} because it is null",
+								nIdx);
+							continue;
+						}
+
+						if (potentialTargetNode.part == null)
+						{
+							verboseLog.AppendFormat("\nSkipping potentialTargetNode at index {0} because its part is null",
+								nIdx);
+							continue;
+						}
+
+						if (potentialTargetNode.nodeTransform == null)
+						{
+							verboseLog.AppendFormat("\nSkipping potentialTargetNode at index {0} because its node transform is null",
+								nIdx);
+							continue;
+						}
+
 						verboseLog.AppendFormat("\nFound potentialTargetNode: {0}", potentialTargetNode);
 						verboseLog.AppendFormat("\n\tpotentialTargetNode.state: {0}", potentialTargetNode.state);
 						verboseLog.AppendFormat("\n\tpotentialTargetNode.nodeType: {0}", potentialTargetNode.nodeType);
