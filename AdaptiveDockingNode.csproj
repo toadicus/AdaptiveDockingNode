@@ -72,23 +72,50 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ModuleAdaptiveDockingNode.cs" />
-    <Compile Include="..\ToadicusTools\Tools.cs">
-      <Link>ToadicusTools\Tools.cs</Link>
+    <Compile Include="..\ToadicusTools\Logging.cs">
+      <Link>ToadicusTools\Logging.cs</Link>
     </Compile>
-    <Compile Include="..\ToadicusTools\PartExtensions.cs">
+    <Compile Include="..\ToadicusTools\Text\Extensions.cs">
+      <Link>ToadicusTools\Extensions.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Text\PooledStringBuilder.cs">
+      <Link>ToadicusTools\PooledStringBuilder.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Text\SIFormatProvider.cs">
+      <Link>ToadicusTools\SIFormatProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Text\TextTools.cs">
+      <Link>ToadicusTools\TextTools.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\APIHelpers\PooledObject.cs">
+      <Link>ToadicusTools\PooledObject.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Enums.cs">
+      <Link>Enums.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Extensions\PartExtensions.cs">
       <Link>ToadicusTools\PartExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\ToadicusTools\VesselExtensions.cs">
+    <Compile Include="..\ToadicusTools\Debug\PooledDebugLogger.cs">
+      <Link>ToadicusTools\PooledDebugLogger.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Extensions\VesselExtensions.cs">
       <Link>ToadicusTools\VesselExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Extensions\ComponentExtensions.cs">
+      <Link>ToadicusTools\ComponentExtensions.cs</Link>
     </Compile>
     <Compile Include="..\ToadicusTools\VectorTools.cs">
       <Link>ToadicusTools\VectorTools.cs</Link>
     </Compile>
+    <Compile Include="..\ToadicusTools\MathTools.cs">
+      <Link>ToadicusTools\MathTools.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\MuMechTools\MuMech_Tools.cs">
+      <Link>ToadicusTools\MuMech_Tools.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="ToadicusTools\" />
-  </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\_KSPAssemblies\Assembly-CSharp.dll</HintPath>
@@ -102,5 +129,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="GameData\AdaptiveDockingNode\AdaptiveDockingNode.cfg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ToadicusTools\" />
   </ItemGroup>
 </Project>

@@ -27,6 +27,7 @@ using KSP;
 using System;
 using System.Collections.Generic;
 using ToadicusTools;
+using ToadicusTools.Extensions;
 using UnityEngine;
 
 namespace AdaptiveDockingNode
@@ -128,7 +129,7 @@ namespace AdaptiveDockingNode
 			{
 				case StartState.Editor:
 				case StartState.None:
-					Tools.PostDebugMessage(this, "Refusing to start when not in flight.");
+					Logging.PostDebugMessage(this, "Refusing to start when not in flight.");
 					return;
 				default:
 					break;
@@ -153,7 +154,7 @@ namespace AdaptiveDockingNode
 
 			if (this.validSizes == null || this.validSizes.Count == 0)
 			{
-				Tools.PostDebugMessage(this,
+				Logging.PostDebugMessage(this,
 					"Refusing to start because our module was configured poorly." +
 					"\n\tvalidSizes: {0}",
 					this.validSizes
@@ -197,12 +198,12 @@ namespace AdaptiveDockingNode
 				}
 			}
 
-			Tools.PostDebugMessage(this, "Loaded!" +
+			Logging.PostDebugMessage(this, "Loaded!" +
 				"\n\tdefaultSize: {0}",
 				this.defaultSize
 			);
 
-			Tools.PostDebugMessage(this, "Port gender is {0}", Enum.GetName(typeof(PortGender), this.portGender));
+			Logging.PostDebugMessage(this, "Port gender is {0}", Enum.GetName(typeof(PortGender), this.portGender));
 
 			this.timeoutTimer = new System.Diagnostics.Stopwatch();
 
@@ -210,7 +211,7 @@ namespace AdaptiveDockingNode
 
 			if (this.dockingModule == null)
 			{
-				Tools.PostDebugMessage(this, "Failed startup because a docking module could not be found.");
+				Logging.PostDebugMessage(this, "Failed startup because a docking module could not be found.");
 				return;
 			}
 
@@ -234,7 +235,7 @@ namespace AdaptiveDockingNode
 
 			if (this.dockingModule.referenceAttachNode != string.Empty)
 			{
-				Tools.PostDebugMessage(this,
+				Logging.PostDebugMessage(this,
 					string.Format("referenceAttachNode string: {0}", this.dockingModule.referenceAttachNode));
 
 				AttachNode node;
@@ -249,7 +250,7 @@ namespace AdaptiveDockingNode
 					}
 				}
 
-				Tools.PostDebugMessage(this,
+				Logging.PostDebugMessage(this,
 					string.Format("referenceAttachNode: {0}", this.referenceAttachNode));
 			}
 
@@ -267,7 +268,7 @@ namespace AdaptiveDockingNode
 
 			this.hasAttachedState = !this.hasAttachedPart;
 
-			Tools.PostDebugMessage(this, "Started!",
+			Logging.PostDebugMessage(this, "Started!",
 				string.Format("dockingModule: {0}", this.dockingModule)
 			);
 		}
@@ -285,7 +286,7 @@ namespace AdaptiveDockingNode
 				bool foundApproach = false;
 				#endif
 
-				Tools.DebugLogger verboseLog = Tools.DebugLogger.New(this);
+				PooledDebugLogger verboseLog = PooledDebugLogger.New(this);
 
 				#if DEBUG
 				try
@@ -591,7 +592,7 @@ namespace AdaptiveDockingNode
 		{
 			if (HighLogic.LoadedSceneIsEditor)
 			{
-				Tools.PostDebugMessage(this, "LateUpdate", string.Format("attachedPart: {0}", this.attachedPart));
+				Logging.PostDebugMessage(this, "LateUpdate", string.Format("attachedPart: {0}", this.attachedPart));
 
 				if (this.hasAttachedPart != this.hasAttachedState)
 				{
@@ -601,7 +602,7 @@ namespace AdaptiveDockingNode
 					{
 						ModuleDockingNode attachedNode = this.attachedPart.getFirstModuleOfType<ModuleDockingNode>();
 
-						Tools.PostDebugMessage(this, string.Format("attachedNode: {0}", attachedNode));
+						Logging.PostDebugMessage(this, string.Format("attachedNode: {0}", attachedNode));
 
 						if (attachedNode != null)
 						{
@@ -612,7 +613,7 @@ namespace AdaptiveDockingNode
 							{
 								this.currentSize = GetGreatestCommonNodeType(this, attachedADN);
 
-								Tools.PostDebugMessage(this,
+								Logging.PostDebugMessage(this,
 									string.Format("Attached to AdaptiveDockingNode, setting currentSize = {0}",
 										this.currentSize)
 								);
@@ -621,7 +622,7 @@ namespace AdaptiveDockingNode
 							{
 								this.currentSize = attachedNode.nodeType;
 
-								Tools.PostDebugMessage(this,
+								Logging.PostDebugMessage(this,
 									string.Format("Attached to ModuleDockingNode, setting currentSize = {0}",
 										this.currentSize)
 								);
