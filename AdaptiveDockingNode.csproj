@@ -91,7 +91,7 @@
       <Link>ToadicusTools\PooledObject.cs</Link>
     </Compile>
     <Compile Include="..\ToadicusTools\Enums.cs">
-      <Link>Enums.cs</Link>
+      <Link>ToadicusTools\Enums.cs</Link>
     </Compile>
     <Compile Include="..\ToadicusTools\Extensions\PartExtensions.cs">
       <Link>ToadicusTools\PartExtensions.cs</Link>
