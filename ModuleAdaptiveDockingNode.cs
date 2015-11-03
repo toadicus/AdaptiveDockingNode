@@ -27,7 +27,6 @@ using KSP;
 using System;
 using System.Collections.Generic;
 using ToadicusTools;
-using ToadicusTools.DebugTools;
 using ToadicusTools.Extensions;
 using ToadicusTools.DebugTools;
 using UnityEngine;
@@ -39,13 +38,8 @@ namespace AdaptiveDockingNode
 		[KSPField(isPersistant = false)]
 		public string ValidSizes;
 
-		[KSPField(isPersistant = false)]
-		public string Gender;
-
 		protected ModuleDockingNode dockingModule;
 		protected AttachNode referenceAttachNode;
-
-		protected PortGender portGender;
 
 		protected double vesselFilterDistanceSqr;
 
@@ -116,13 +110,6 @@ namespace AdaptiveDockingNode
 			protected set;
 		}
 
-		public override void OnAwake()
-		{
-			base.OnAwake();
-
-			this.portGender = PortGender.NEUTRAL;
-		}
-
 		public override void OnStart(StartState state)
 		{
 			base.OnStart(state);
@@ -164,48 +151,10 @@ namespace AdaptiveDockingNode
 				return;
 			}
 
-			if (this.Gender != null)
-			{
-				string trimmedGender = this.Gender.Trim().ToLower();
-
-				if (trimmedGender == "female")
-				{
-					this.portGender = PortGender.FEMALE;
-				}
-				else if (trimmedGender == "male")
-				{
-					this.portGender = PortGender.MALE;
-				}
-
-				if (HighLogic.LoadedSceneIsFlight)
-				{
-					switch (this.portGender)
-					{
-						case PortGender.FEMALE:
-						case PortGender.MALE:
-							byte[] partUID = BitConverter.GetBytes(this.part.flightID);
-							byte[] vesselUID = this.vessel.id.ToByteArray();
-							byte[] guidBytes = new byte[partUID.Length + vesselUID.Length];
-
-							partUID.CopyTo(guidBytes, 0);
-							vesselUID.CopyTo(guidBytes, partUID.Length);
-
-							this.GuidString = Convert.ToBase64String(guidBytes).TrimEnd('=');
-
-							this.defaultSize = String.Format("{0}_{1}_{2}", this.defaultSize, trimmedGender, this.GuidString);
-							break;
-						default:
-							break;
-					}
-				}
-			}
-
 			Logging.PostDebugMessage(this, "Loaded!" +
 				"\n\tdefaultSize: {0}",
 				this.defaultSize
 			);
-
-			Logging.PostDebugMessage(this, "Port gender is {0}", Enum.GetName(typeof(PortGender), this.portGender));
 
 			this.timeoutTimer = new System.Diagnostics.Stopwatch();
 
@@ -220,7 +169,6 @@ namespace AdaptiveDockingNode
 			this.dockingModule.Fields["nodeType"].isPersistant = true;
 
 			// If we're not in the editor, not docked, and not preattached, set the current size to the default size.
-			// This stops gendered ports from matching non-adaptive ports.
 			if (
 				!HighLogic.LoadedSceneIsEditor &&
 				this.dockingModule.state != "Docked" &&
@@ -441,11 +389,8 @@ namespace AdaptiveDockingNode
 							string targetSize;
 							targetSize = string.Empty;
 
-							// Only adapt to non-adaptive docking nodes if this node is gender neutral.
-							if (
-								this.validSizes.Contains(potentialTargetNode.nodeType) &&
-								this.portGender == PortGender.NEUTRAL
-							)
+							// adapt to non-adaptive docking nodes
+							if (this.validSizes.Contains(potentialTargetNode.nodeType))
 							{
 								targetSize = potentialTargetNode.nodeType;
 								this.currentSize = targetSize;
@@ -461,29 +406,11 @@ namespace AdaptiveDockingNode
 							// If we've found an AdaptiveDockingNode...
 							if (targetAdaptiveNode != null)
 							{
-								// ...and if the genders don't match, skip this target.
-								switch (this.portGender)
-								{
-									case PortGender.NEUTRAL:
-										if (targetAdaptiveNode.portGender != PortGender.NEUTRAL)
-											continue;
-										break;
-									case PortGender.FEMALE:
-										if (targetAdaptiveNode.portGender != PortGender.MALE)
-											continue;
-										break;
-									case PortGender.MALE:
-										if (targetAdaptiveNode.portGender != PortGender.FEMALE)
-											continue;
-										break;
-								}
-
 								verboseLog.AppendFormat("\n\tpotentialTargetNode is adaptive.");
 								verboseLog.AppendFormat("\n\tdefaultSize: {0}", targetAdaptiveNode.defaultSize);
 								verboseLog.AppendFormat("\n\tvalidSizes: {0}", targetAdaptiveNode.validSizes);
 
 								// ...and if we can become its largest (default) size...
-								// This will never be true for gendered ports, because they will have _{gender} appended
 								// to their default size.
 								if (this.validSizes.Contains(targetAdaptiveNode.defaultSize))
 								{
@@ -502,18 +429,7 @@ namespace AdaptiveDockingNode
 										continue;
 									}
 
-									// ...otherwise, target the common size, obfuscating for gendered ports just in case
-									switch (this.portGender)
-									{
-										case PortGender.FEMALE:
-										case PortGender.MALE:
-											targetSize = String.Concat(commonNodeType, "_gendered");
-											break;
-										default:
-											targetSize = commonNodeType;
-											break;
-									}
-
+									targetSize = commonNodeType;
 									targetAdaptiveNode.currentSize = targetSize;
 
 									verboseLog.AppendFormat(
@@ -673,12 +589,5 @@ namespace AdaptiveDockingNode
 
 			return string.Empty;
 		}
-	}
-
-	public enum PortGender
-	{
-		NEUTRAL,
-		MALE,
-		FEMALE
 	}
 }
